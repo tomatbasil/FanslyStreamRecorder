@@ -2,6 +2,7 @@ import os
 import shutil
 from pathlib import Path
 from src.discord_bot import discord_bot
+from src.config import CONFIG
 
 
 async def check_disk_space_and_cleanup(output_dir, min_free_gb=20.0):
@@ -52,9 +53,25 @@ async def check_disk_space_and_cleanup(output_dir, min_free_gb=20.0):
 
             bytes_freed = 0
             files_removed = 0
+            protected_files_skipped = 0
 
             # Remove oldest files until we free up enough space or run out of files
             for file_path in video_files:
+                # Check if file belongs to a protected user
+                file_name = file_path.stem
+                is_protected = False
+
+                # Check if any protected username is in the file name
+                for protected_user in CONFIG.protected_users:
+                    if protected_user.lower() in file_name.lower():
+                        is_protected = True
+                        protected_files_skipped += 1
+                        print(f"Skipping protected user file: {file_path}")
+                        break
+
+                if is_protected:
+                    continue
+
                 # Check file size and add to deletion list
                 file_size = os.path.getsize(file_path)
                 file_size_gb = file_size / (1024 * 1024 * 1024)
@@ -85,11 +102,14 @@ async def check_disk_space_and_cleanup(output_dir, min_free_gb=20.0):
 
             # Notify via Discord if enabled
             if discord_bot.enabled:
-                await discord_bot.send_message(
-                    f"♻️ **Auto-cleanup triggered**\n"
-                    f"Low disk space: {free_gb:.2f}GB free\n"
-                    f"Removed {files_removed} oldest video(s), freed {gb_freed:.2f}GB"
-                )
+                message = f"♻️ **Auto-cleanup triggered**\nLow disk space: {free_gb:.2f}GB free\n"
+
+                if protected_files_skipped > 0:
+                    message += f"Skipped {protected_files_skipped} protected user file(s)\n"
+
+                message += f"Removed {files_removed} oldest video(s), freed {gb_freed:.2f}GB"
+
+                await discord_bot.send_message(message)
 
     except Exception as e:
         print(f"Error during disk space check and cleanup: {str(e)}")
