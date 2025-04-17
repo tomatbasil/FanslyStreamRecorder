@@ -11,6 +11,10 @@ class Config(BaseModel):
         description="Directory where recordings will be saved",
     )
     users_to_monitor: List[str] = Field(default_factory=list, description="List of Fansly usernames to monitor")
+    protected_users: List[str] = Field(
+        default_factory=list,
+        description="List of users whose videos will never be removed during cleanup",
+    )
     check_interval: int = Field(
         default=60,
         description="Interval in seconds to check for live streams",
@@ -157,10 +161,26 @@ def get_discord_settings() -> tuple[bool, str]:
     return enable, channel_id
 
 
-def get_cleanup_settings() -> tuple[bool, float]:
+def get_protected_users() -> List[str]:
+    """Ask the user for Fansly usernames whose videos should never be removed during cleanup"""
+    protected_users = []
+    print("\nEnter Fansly usernames whose videos should NEVER be removed (one per line, leave empty to finish):")
+    while True:
+        username = input("Protected username (or press Enter to finish): ").strip()
+        if not username:
+            break
+        protected_users.append(username)
+
+    if protected_users:
+        print(f"Added {len(protected_users)} protected users: {', '.join(protected_users)}")
+    return protected_users
+
+
+def get_cleanup_settings() -> tuple[bool, float, List[str]]:
     """Ask the user for disk cleanup settings"""
     remove_old = get_boolean_setting("Remove old recordings to free up disk space?", True)
     min_free_space = 20.0
+    protected_users = []
 
     if remove_old:
         while True:
@@ -179,7 +199,10 @@ def get_cleanup_settings() -> tuple[bool, float]:
             except ValueError:
                 print("Please enter a valid number")
 
-    return remove_old, min_free_space
+        # Ask for protected users when cleanup is enabled
+        protected_users = get_protected_users()
+
+    return remove_old, min_free_space, protected_users
 
 
 def get_all_settings() -> Config:
@@ -208,7 +231,7 @@ def get_all_settings() -> Config:
 
     # Get cleanup settings
     print("\n----- Disk Cleanup Settings -----")
-    remove_old_recordings, min_free_disk_space = get_cleanup_settings()
+    remove_old_recordings, min_free_disk_space, protected_users = get_cleanup_settings()
 
     # Get Discord settings
     print("\n----- Discord Notifications -----")
@@ -220,6 +243,7 @@ def get_all_settings() -> Config:
     return Config(
         output_directory=output_dir,
         users_to_monitor=users,
+        protected_users=protected_users,
         check_interval=check_interval,
         generate_thumbnail=generate_thumbnail,
         compress_videos=compress_videos,
