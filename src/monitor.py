@@ -191,7 +191,9 @@ class UserMonitor:
                     print(f"Thumbnail upload failed - jpg5 result: {jpg5_result}")
                     print(f"Thumbnail upload failed - bunkr result: {bunkr_result}")
 
-        await self.send_end_message(videos, thumbnail_url=thumbnail_url)
+            if CONFIG.discord_enable:
+                await self.send_end_message(videos, thumbnail_url=thumbnail_url)
+            self.save_upload_results(videos, thumbnail_url=thumbnail_url)
         self.update_ui("Stream ended", recording=False, current_file=None)
         self.current_output_path = None
 
@@ -219,3 +221,31 @@ class UserMonitor:
                     discord_msg += f"{url}\n"
         discord_msg += "```"
         await self.discord_bot.send_message(discord_msg)
+
+    def save_upload_results(self, videos, thumbnail_url=None):
+        current_date = datetime.now().strftime("%b %d %Y")
+        if self.current_output_path:
+            txt_file_path = os.path.splitext(self.current_output_path)[0] + ".txt"
+            txt_content = f"{current_date}\n\n"
+
+            if thumbnail_url:
+                txt_content += f"Thumbnail: {thumbnail_url}\n\n"
+            if videos:
+                txt_content += "Video Links:\n"
+                for upload in videos:
+                    result = upload["result"]
+                    service_name = upload["service"].capitalize()
+
+                    if result.get("multiple") and "urls" in result:
+                        for idx, url in enumerate(result["urls"]):
+                            txt_content += f"{service_name} {idx + 1}: {url}\n"
+                    else:
+                        url = result.get("url", "No URL provided")
+                        txt_content += f"{service_name}: {url}\n"
+
+            try:
+                with open(txt_file_path, "w", encoding="utf-8") as f:
+                    f.write(txt_content)
+                print(f"Saved upload information to {txt_file_path}")
+            except Exception as e:
+                print(f"Failed to save upload information: {str(e)}")
