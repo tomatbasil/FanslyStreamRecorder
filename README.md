@@ -1,6 +1,6 @@
 # Fansly Stream Recorder
 
-An automated tool to monitor and record live streams from Fansly creators.
+An automated tool to record, compress and upload live streams from Fansly creators.
 
 ## Requirements
 
@@ -61,7 +61,7 @@ pip install -r requirements.txt
 3. Create `.env` and add your Fansly authentication token, Discord bot token (optional) and Bunkr token (optional):
 
 ```env
-FANSLY_AUTH_TOKEN=your_token_here;
+FANSLY_AUTH_TOKEN=your_token_here
 DISCORD_BOT_TOKEN=your_discord_bot_token_here
 BUNKR_TOKEN=your_token_here
 ```
@@ -106,6 +106,13 @@ All configuration options are stored in `config.yaml` in the project root direct
 | `upload_videos`                   | Upload videos after recording                | `False`       | Boolean |
 | `delete_split_video_after_upload` | Delete split video files after upload        | `True`        | Boolean |
 
+#### Disk Cleanup Settings
+
+| Setting                 | Description                                 | Default Value | Type    |
+| ----------------------- | ------------------------------------------- | ------------- | ------- |
+| `remove_old_recordings` | Remove old recordings to free up disk space | `True`        | Boolean |
+| `min_free_disk_space`   | Minimum free disk space to maintain in GB   | `20.0`        | Float   |
+
 #### Discord Notification Settings
 
 | Setting              | Description                          | Default Value       | Type    |
@@ -128,6 +135,8 @@ compress_videos: true
 delete_original: true
 upload_videos: false
 delete_split_video_after_upload: true
+remove_old_recordings: true
+min_free_disk_space: 20.0
 discord_enable: false
 discord_channel_id: ""
 ```
