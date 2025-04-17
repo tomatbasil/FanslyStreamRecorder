@@ -60,6 +60,8 @@ pip install -r requirements.txt
 
 3. Create `.env` and add your Fansly authentication token, Discord bot token (optional) and Bunkr token (optional):
 
+To get your fansly auth token, you can run this in the console: `this.getAuth()`
+
 ```env
 FANSLY_AUTH_TOKEN=your_token_here
 DISCORD_BOT_TOKEN=your_discord_bot_token_here
