@@ -90,11 +90,12 @@ All configuration options are stored in `config.yaml` in the project root direct
 
 #### General Settings
 
-| Setting            | Description                                   | Default Value     | Type            |
-| ------------------ | --------------------------------------------- | ----------------- | --------------- |
-| `output_directory` | Directory where recordings will be saved      | `recordings/`     | Path            |
-| `users_to_monitor` | List of Fansly usernames to monitor           | `[]` (empty list) | List of strings |
-| `check_interval`   | Interval in seconds to check for live streams | `60`              | Integer         |
+| Setting            | Description                                                              | Default Value     | Type            |
+| ------------------ | ------------------------------------------------------------------------ | ----------------- | --------------- |
+| `output_directory` | Directory where recordings will be saved                                 | `recordings/`     | Path            |
+| `users_to_monitor` | List of Fansly usernames to monitor                                      | `[]` (empty list) | List of strings |
+| `protected_users`  | List of Fansly usernames who's videos should never be removed by cleanup | `[]` (empty list) | List of strings |
+| `check_interval`   | Interval in seconds to check for live streams                            | `60`              | Integer         |
 
 #### Video Settings
 
