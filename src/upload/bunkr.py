@@ -123,13 +123,30 @@ class BunkrUploader:
         self.check: BunkrConfig = requests.get("https://dash.bunkr.cr/api/check").json()
         self.node: NodeResponse = requests.get("https://dash.bunkr.cr/api/node", headers=self.headers).json()
         self.upload_url = self.node.get("url")
+        self.max_file_size = self._str_to_size(self.check.get("maxSize", "2000MB"))
 
         max_chunk_size_str = self.check.get("chunkSize").get("max")
-        max_chunk_size_bytes = int(max_chunk_size_str.replace("MB", "").strip()) * 1024 * 1024
+        max_chunk_size_bytes = self._str_to_size(max_chunk_size_str)
         if self.chunk_size > max_chunk_size_bytes:
             print(f"Chunk size exceeds maximum allowed size ({max_chunk_size_str}). Setting to default value.")
             default_chunk_size_str = self.check.get("chunkSize").get("default")
             self.chunk_size = int(default_chunk_size_str.replace("MB", "").strip()) * 1024 * 1024
+
+    def _str_to_size(self, size_str: str) -> int:
+        """
+        Convert a size string (e.g., "2GB", "500MB") to bytes.
+        """
+        size_str = size_str.strip()
+        if size_str.endswith("GB"):
+            return int(size_str[:-2]) * 1024 * 1024 * 1024
+        elif size_str.endswith("MB"):
+            return int(size_str[:-2]) * 1024 * 1024
+        elif size_str.endswith("KB"):
+            return int(size_str[:-2]) * 1024
+        elif size_str.endswith("B"):
+            return int(size_str[:-1])
+        else:
+            raise ValueError(f"Invalid size format: {size_str}")
 
     def refresh_url(self) -> None:
         """
@@ -189,7 +206,7 @@ class BunkrUploader:
         total_filesize = os.path.getsize(file_path)
 
         max_size_str = self.check.get("maxSize", "2000MB")
-        max_size_bytes = int(max_size_str.replace("MB", "").strip()) * 1024 * 1024
+        max_size_bytes = self._str_to_size(max_size_str)
         if total_filesize > max_size_bytes:
             print(f"File size {total_filesize} exceeds maximum allowed size of {max_size_bytes} bytes.")
             return False
