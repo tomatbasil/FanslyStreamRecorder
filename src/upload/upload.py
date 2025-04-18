@@ -50,13 +50,12 @@ async def upload_file(path: str, service: str) -> dict:
             if "bunkr" not in verified_uploaders:
                 return result
             # Split the video into chunks if it's too large
-            max_size_gb = 1.9
-            file_size_gb = os.path.getsize(path) / (1024**3)
-
+            file_size = os.path.getsize(path)
             uploader = BunkrUploader(os.environ.get("BUNKR_TOKEN"), config={"silent": True})
 
-            if file_size_gb > max_size_gb:
-                split_paths = split_video_by_size(path, max_size_gb)
+            if file_size > uploader.max_file_size:
+                max_size_gb = uploader.max_file_size / (1024 * 1024 * 1024)
+                split_paths = split_video_by_size(path, max_size_gb * 0.9)
 
                 if isinstance(split_paths, list):
                     # Use non-async method (run synchronously)
