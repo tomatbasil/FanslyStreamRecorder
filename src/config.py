@@ -10,7 +10,9 @@ class Config(BaseModel):
         default=Path("recordings"),
         description="Directory where recordings will be saved",
     )
-    users_to_monitor: List[str] = Field(default_factory=list, description="List of Fansly usernames to monitor")
+    users_to_monitor: List[str] = Field(
+        default_factory=list, description="List of Fansly usernames to monitor"
+    )
     protected_users: List[str] = Field(
         default_factory=list,
         description="List of users whose videos will never be removed during cleanup",
@@ -27,7 +29,7 @@ class Config(BaseModel):
     )
     compress_videos: bool = Field(
         default=True,
-        description="Whether to compress videos after recording",
+        description="Whether to compress videos during recording",
     )
     delete_original: bool = Field(
         default=True,
@@ -164,7 +166,9 @@ def get_discord_settings() -> tuple[bool, str]:
 def get_protected_users() -> List[str]:
     """Ask the user for Fansly usernames whose videos should never be removed during cleanup"""
     protected_users = []
-    print("\nEnter Fansly usernames whose videos should NEVER be removed (one per line, leave empty to finish):")
+    print(
+        "\nEnter Fansly usernames whose videos should NEVER be removed (one per line, leave empty to finish):"
+    )
     while True:
         username = input("Protected username (or press Enter to finish): ").strip()
         if not username:
@@ -172,13 +176,17 @@ def get_protected_users() -> List[str]:
         protected_users.append(username)
 
     if protected_users:
-        print(f"Added {len(protected_users)} protected users: {', '.join(protected_users)}")
+        print(
+            f"Added {len(protected_users)} protected users: {', '.join(protected_users)}"
+        )
     return protected_users
 
 
 def get_cleanup_settings() -> tuple[bool, float, List[str]]:
     """Ask the user for disk cleanup settings"""
-    remove_old = get_boolean_setting("Remove old recordings to free up disk space?", True)
+    remove_old = get_boolean_setting(
+        "Remove old recordings to free up disk space?", True
+    )
     min_free_space = 20.0
     protected_users = []
 
@@ -186,7 +194,7 @@ def get_cleanup_settings() -> tuple[bool, float, List[str]]:
         while True:
             try:
                 space_str = input(
-                    f"Enter minimum free disk space to maintain in GB (press Enter for default 20GB): "
+                    "Enter minimum free disk space to maintain in GB (press Enter for default 20GB): "
                 ).strip()
                 if not space_str:
                     break
@@ -220,14 +228,22 @@ def get_all_settings() -> Config:
 
     # Get video settings
     print("\n----- Video Settings -----")
-    generate_thumbnail = get_boolean_setting("Generate thumbnails for recorded videos?", True)
-    compress_videos = get_boolean_setting("Compress videos after recording?", True)
+    generate_thumbnail = get_boolean_setting(
+        "Generate thumbnails for recorded videos?", True
+    )
+    compress_videos = get_boolean_setting("Compress videos during recording?", True)
     delete_original = (
-        get_boolean_setting("Delete original video files after compression?", True) if compress_videos else False
+        get_boolean_setting("Delete original video files after compression?", True)
+        if compress_videos
+        else False
     )
 
     upload_videos = get_boolean_setting("Upload videos after recording?", False)
-    delete_split = get_boolean_setting("Delete split video files after upload?", True) if upload_videos else True
+    delete_split = (
+        get_boolean_setting("Delete split video files after upload?", True)
+        if upload_videos
+        else True
+    )
 
     # Get cleanup settings
     print("\n----- Disk Cleanup Settings -----")

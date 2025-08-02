@@ -6,7 +6,6 @@ from datetime import datetime
 from src.fansly import fetch_user_data, fetch_stream_data
 from src.config import CONFIG
 from src.video import (
-    compress_video,
     check_disk_space_and_cleanup,
     auto_create_thumbnail,
 )
@@ -44,10 +43,10 @@ class UserMonitor:
     def update_ui(self, status, recording=None, current_file=None):
         if self.ui:
             self.ui.update_user(
-                self.username,
+                self.username if self.username is not None else "",
                 status,
-                recording=recording,
-                current_file=current_file,
+                recording=recording if recording is not None else False,
+                current_file=current_file if current_file is not None else "",
             )
 
     async def stop(self):
@@ -82,7 +81,9 @@ class UserMonitor:
             return  # Skip if already recording
 
         if CONFIG.remove_old_recordings:
-            await check_disk_space_and_cleanup(CONFIG.output_directory, CONFIG.min_free_disk_space)
+            await check_disk_space_and_cleanup(
+                CONFIG.output_directory, CONFIG.min_free_disk_space
+            )
 
         await self.discord_bot.send_message(f"🔴 {self.username}: Stream Starting")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -95,25 +96,32 @@ class UserMonitor:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         self.current_output_path = output_path
-        self.update_ui("Recording", recording=True, current_file=os.path.basename(output_path))
+        self.update_ui(
+            "Recording", recording=True, current_file=os.path.basename(output_path)
+        )
 
-        # TEMPORARY TESTING MODE - Record for just 60 seconds
-        if CONFIG.dev_mode:
+        ffmpeg_cmd = []
+        if CONFIG.compress_videos:
             ffmpeg_cmd = [
                 "ffmpeg",
                 "-loglevel",
                 "quiet",
                 "-i",
                 url,
-                "-c",
-                "copy",
-                "-f",
-                "mp4",
-                "-t",
-                "60",  # Record for only 60 seconds
+                "-c:v",
+                "libx264",
+                "-preset",
+                "veryfast",
+                "-crf",
+                "26",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "128k",
+                "-movflags",
+                "+frag_keyframe+empty_moov",
                 output_path,
             ]
-            print("TESTING MODE: Recording for only 60 seconds")
         else:
             ffmpeg_cmd = [
                 "ffmpeg",
@@ -127,9 +135,15 @@ class UserMonitor:
                 "mp4",
                 output_path,
             ]
+        if CONFIG.dev_mode:
+            ffmpeg_cmd.insert(-1, "-t")
+            ffmpeg_cmd.insert(-1, "60")
+            print("TESTING MODE: Recording for only 60 seconds")
 
         try:
-            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            process = subprocess.Popen(
+                ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
             self.is_recording = True
             while process.poll() is None:
                 await asyncio.sleep(1)
@@ -144,6 +158,10 @@ class UserMonitor:
         await self.discord_bot.send_message(f"⚫ {self.username}: Stream Ended")
 
         video_path = self.current_output_path
+        if not video_path:
+            print("No video path available, cannot handle stream end")
+            return
+
         thumbnail_path = None
         if not os.path.exists(video_path):
             print(f"Video file {video_path} does not exist")
@@ -153,8 +171,6 @@ class UserMonitor:
             thumbnail_name = os.path.splitext(video_path)[0] + ".jpg"
             auto_create_thumbnail(video_path, thumbnail_name)
             thumbnail_path = thumbnail_name
-        if CONFIG.compress_videos:
-            video_path = await compress_video(self.current_output_path, self.username)
 
         videos = []
         thumbnail_url = None
@@ -180,10 +196,18 @@ class UserMonitor:
                 bunkr_result = thumbnail_uploads[1]
 
                 # Check if jpg5 upload was successful and has a URL
-                if jpg5_result and jpg5_result.get("success") and jpg5_result.get("url"):
+                if (
+                    jpg5_result
+                    and jpg5_result.get("success")
+                    and jpg5_result.get("url")
+                ):
                     thumbnail_url = jpg5_result.get("url")
                 # If jpg5 failed, try bunkr result
-                elif bunkr_result and bunkr_result.get("success") and bunkr_result.get("url"):
+                elif (
+                    bunkr_result
+                    and bunkr_result.get("success")
+                    and bunkr_result.get("url")
+                ):
                     thumbnail_url = bunkr_result.get("url")
 
                 # Debug output to help troubleshoot

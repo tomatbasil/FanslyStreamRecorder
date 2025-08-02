@@ -60,8 +60,6 @@ pip install -r requirements.txt
 
 3. Create `.env` and add your Fansly authentication token, Discord bot token (optional) and Bunkr token (optional):
 
-To get your fansly auth token, you can run this in the console: `this.getAuth()`
-
 ```env
 FANSLY_AUTH_TOKEN=your_token_here
 DISCORD_BOT_TOKEN=your_discord_bot_token_here
@@ -104,7 +102,7 @@ All configuration options are stored in `config.yaml` in the project root direct
 | Setting                           | Description                                  | Default Value | Type    |
 | --------------------------------- | -------------------------------------------- | ------------- | ------- |
 | `generate_thumbnail`              | Generate a thumbnail for recorded videos     | `True`        | Boolean |
-| `compress_videos`                 | Compress videos after recording              | `True`        | Boolean |
+| `compress_videos`                 | Compress videos during recording             | `True`        | Boolean |
 | `delete_original`                 | Delete original video file after compression | `True`        | Boolean |
 | `upload_videos`                   | Upload videos after recording                | `False`       | Boolean |
 | `delete_split_video_after_upload` | Delete split video files after upload        | `True`        | Boolean |
